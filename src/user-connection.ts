@@ -21,6 +21,7 @@ import * as WebSocket from 'ws';
 import logger from './logger';
 import noop from './noop';
 import RedisSubscriber from './redis-subscriber';
+import Message from './types/message';
 import UserSession from './types/user-session';
 
 interface Params {
@@ -28,6 +29,14 @@ interface Params {
   redisSubscriber: RedisSubscriber;
   session: UserSession;
   ws: WebSocket;
+}
+
+function isMessage(obj: any): obj is Message {
+  return typeof obj.data === 'object';
+}
+
+function isPublicChannel(obj: Message) {
+  return obj.data.type === 'PUBLIC' && obj.data.channel_id != null;
 }
 
 export default class UserConnection {
@@ -82,8 +91,20 @@ export default class UserConnection {
         }
 
         logger.debug(`sending event ${message.event} to ${this.session.userId} (${this.session.ip})`);
-        if (typeof message.data !== 'object') {
+        if (!isMessage(message)) {
           return;
+        }
+
+        if (message.event === 'chat.channel.join') {
+          if (isPublicChannel(message)) {
+            console.debug('subscribe to channel');
+            this.redisSubscriber.subscribe(`chat:channel:${message.data.channel_id}`, this);
+          }
+        } else if (message.event === 'chat.channel.part') {
+          if (isPublicChannel(message)) {
+            console.debug('unsubscribe from channel');
+            this.redisSubscriber.unsubscribe(`chat:channel:${message.data.channel_id}`, this);
+          }
         }
 
         this.ws.send(messageString, noop);
