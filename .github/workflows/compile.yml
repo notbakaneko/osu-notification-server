@@ -15,7 +15,7 @@ jobs:
         uses: actions/setup-node@v2
         with:
           cache: 'yarn'
-          node-version: '18'
+          node-version: '26'
 
       - name: Install js dependencies
         run: yarn --frozen-lockfile

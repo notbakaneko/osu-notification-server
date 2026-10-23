@@ -1,5 +1,8 @@
 {
   "private": true,
+  "engines": {
+    "node": ">=26"
+  },
   "scripts": {
     "build": "tsc",
     "lint": "eslint --cache 'src/**/*.{js,ts}' '*.js'",
